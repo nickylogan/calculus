@@ -109,3 +109,8 @@ func (o operator) Arity() arity {
 	}
 	return Binary
 }
+
+// TODO: remove
+func isUnaryCandidate(r rune) bool {
+	return r == '-' || r == '+'
+}

@@ -16,7 +16,7 @@ type Tokenizer interface {
 const (
 	tokenNothing = 1 << iota
 	tokenInteger
-	tokenLoneDecimalPoint
+	tokenDecimalPoint
 	tokenDecimal
 	tokenLeftParen
 	tokenRightParen
@@ -30,14 +30,16 @@ type tokenizer struct {
 	sc         *bufio.Scanner
 	tokens     []Token
 	currState  int
-	currSymbol strings.Builder
+	currSymbol *strings.Builder
 	currIndex  int
 	parenDepth *depthStack
 }
 
 // NewTokenizer creates a new Tokenizer
 func NewTokenizer() Tokenizer {
-	return &tokenizer{}
+	return &tokenizer{
+		currSymbol: new(strings.Builder),
+	}
 }
 
 // Tokenize implements the Tokenizer interface
@@ -92,9 +94,10 @@ func (t *tokenizer) Tokenize(expr string) (tokens []Token, err error) {
 
 func (t *tokenizer) handleDigit(r rune) (err error) {
 	// "." => ".5"
-	if t.currState == tokenLoneDecimalPoint {
+	if t.currState == tokenDecimalPoint {
 		t.currSymbol.WriteRune(r)
 		t.currState = tokenDecimal
+		return
 	}
 	// "1" => "12", "1.2" => "1.23"
 	if t.currState&(tokenInteger|tokenDecimal) != 0 {
@@ -114,7 +117,7 @@ func (t *tokenizer) handleDigit(r rune) (err error) {
 
 func (t *tokenizer) handleDecimalPoint(r rune) (err error) {
 	// can't allow multiple decimal points
-	if t.currState&(tokenDecimal|tokenLoneDecimalPoint) != 0 {
+	if t.currState&(tokenDecimal|tokenDecimalPoint) != 0 {
 		return SyntaxError{
 			Message:  errMultipleDecimal,
 			Token:    string(r),
@@ -136,13 +139,13 @@ func (t *tokenizer) handleDecimalPoint(r rune) (err error) {
 		t.appendToken(NewOperator(Multiplication))
 	}
 	t.currSymbol.WriteRune(r)
-	t.currState = tokenLoneDecimalPoint
+	t.currState = tokenDecimalPoint
 	return
 }
 
 func (t *tokenizer) handleLeftParen(r rune) (err error) {
 	// can't allow lone decimal point to be followed by a left parenthesis
-	if t.currState == tokenLoneDecimalPoint {
+	if t.currState == tokenDecimalPoint {
 		return SyntaxError{
 			Message:  fmt.Sprintf(errLoneDecimal, t.currIndex-1),
 			Token:    ".",
@@ -164,20 +167,20 @@ func (t *tokenizer) handleLeftParen(r rune) (err error) {
 }
 
 func (t *tokenizer) handleRightParen(r rune) (err error) {
-	// can't allow lone decimal point to be followed by a right parenthesis
-	if t.currState == tokenLoneDecimalPoint {
-		return SyntaxError{
-			Message:  fmt.Sprintf(errLoneDecimal, t.currIndex-1),
-			Token:    ".",
-			Position: t.currIndex - 1,
-		}
-	}
 	// can't allow unmatched parentheses
 	if t.parenDepth.current() == 0 {
 		return SyntaxError{
 			Message:  fmt.Sprintf(errUnmatchedRightParen, t.currIndex),
 			Token:    ")",
 			Position: t.currIndex,
+		}
+	}
+	// can't allow lone decimal point to be followed by a right parenthesis
+	if t.currState == tokenDecimalPoint {
+		return SyntaxError{
+			Message:  fmt.Sprintf(errLoneDecimal, t.currIndex-1),
+			Token:    ".",
+			Position: t.currIndex - 1,
 		}
 	}
 	// can't allow empty parentheses
@@ -198,14 +201,16 @@ func (t *tokenizer) handleRightParen(r rune) (err error) {
 	}
 
 	t.commitCurrentState()
+
 	t.currSymbol.WriteRune(r)
 	t.currState = tokenRightParen
+	t.parenDepth.decrement(t.currIndex)
 	return
 }
 
 func (t *tokenizer) handleOperator(r rune) (err error) {
 	// can't allow lone decimal point to be followed by operator
-	if t.currState == tokenLoneDecimalPoint {
+	if t.currState == tokenDecimalPoint {
 		return SyntaxError{
 			Message:  fmt.Sprintf(errLoneDecimal, t.currIndex-1),
 			Token:    ".",
@@ -214,7 +219,8 @@ func (t *tokenizer) handleOperator(r rune) (err error) {
 	}
 
 	// handle sign
-	if (r == '+' || r == '-') && t.currState&(tokenLeftParen|tokenBinaryOp|tokenLeftUnaryOp) != 0 {
+	// TODO: this rule only applies for sign operators.
+	if isUnaryCandidate(r) && t.currState&(tokenNothing|tokenLeftParen|tokenBinaryOp|tokenLeftUnaryOp) != 0 {
 		t.commitCurrentState()
 		t.currState = tokenLeftUnaryOp
 		t.currSymbol.WriteRune(r)
@@ -277,7 +283,7 @@ func (t *tokenizer) commitCurrentState() {
 func (t *tokenizer) validateFinalState() (err error) {
 	switch t.currState {
 	// can't allow lone decimal point as final state
-	case tokenLoneDecimalPoint:
+	case tokenDecimalPoint:
 		return SyntaxError{
 			Message:  fmt.Sprintf(errLoneDecimal, t.currIndex-1),
 			Token:    ".",
