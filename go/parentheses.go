@@ -32,3 +32,7 @@ func (d *depthStack) current() int {
 	}
 	return d.stack[len(d.stack)-1][1]
 }
+
+func (d *depthStack) clear() {
+	d.stack = nil
+}
