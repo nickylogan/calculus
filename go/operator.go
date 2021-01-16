@@ -4,30 +4,30 @@ type opType int
 
 // Common operator types
 const (
-	Addition       opType = iota // Addition is the binary addition operator.
-	Subtraction                  // Subtraction is the binary subtraction operator.
-	Multiplication               // Multiplication is the multiplication operator.
-	Division                     // Division is the division operator.
-	Power                        // Power is the power/exponent operator.
-	Plus                         // Plus is the unary plus sign.
-	Minus                        // Minus is the unary minus sign.
-	Factorial                    // Factorial is the factorial operator.
+	Addition       opType = iota + 1 // Addition is the binary addition operator.
+	Subtraction                      // Subtraction is the binary subtraction operator.
+	Multiplication                   // Multiplication is the multiplication operator.
+	Division                         // Division is the division operator.
+	Power                            // Power is the power/exponent operator.
+	Plus                             // Plus is the unary plus sign.
+	Minus                            // Minus is the unary minus sign.
+	Factorial                        // Factorial is the factorial operator.
 )
 
 type assoc int
 
 // Two types of operator associativity
 const (
-	LeftAssoc  assoc = iota // LeftAssoc represents the left associativity of an operator.
-	RightAssoc              // RightAssoc represents the right associativity of an operator.
+	LeftAssoc  assoc = iota + 1 // LeftAssoc represents the left associativity of an operator.
+	RightAssoc                  // RightAssoc represents the right associativity of an operator.
 )
 
 type arity int
 
 // Two types of operator arity
 const (
-	Binary arity = iota // Binary represents a binary operator.
-	Unary               // Unary represents a unary operator.
+	Binary arity = iota + 1 // Binary represents a binary operator.
+	Unary                   // Unary represents a unary operator.
 )
 
 // Operator represents an arithmetic operator
@@ -63,7 +63,7 @@ func (o operator) String() string {
 	case Factorial:
 		return "!"
 	}
-	return string(o.opType)
+	return "<?>"
 }
 
 // Type implements the Operator interface.
@@ -78,9 +78,9 @@ func (o operator) Precedence() int {
 		return 2
 	case Multiplication, Division:
 		return 3
-	case Power:
-		return 4
 	case Plus, Minus:
+		return 4
+	case Power:
 		return 5
 	case Factorial:
 		return 6
@@ -91,9 +91,9 @@ func (o operator) Precedence() int {
 // Associativity implements the Operator interface.
 func (o operator) Associativity() assoc {
 	switch o.opType {
-	case Addition, Subtraction, Multiplication, Division:
+	case Addition, Subtraction, Multiplication, Division, Factorial:
 		return LeftAssoc
-	case Power, Factorial:
+	case Plus, Minus, Power:
 		return RightAssoc
 	}
 	return LeftAssoc
