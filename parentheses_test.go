@@ -6,36 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestLeftParen_String(t *testing.T) {
-	tests := []struct {
-		name string
-		want string
-	}{
-		{"a LeftParen's string representation should be '('", "("},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			l := LeftParen{}
-			assert.Equal(t, tt.want, l.String())
-		})
-	}
-}
-
-func TestRightParen_String(t *testing.T) {
-	tests := []struct {
-		name string
-		want string
-	}{
-		{"a RightParen's string representation should be ')'", ")"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			r := RightParen{}
-			assert.Equal(t, tt.want, r.String())
-		})
-	}
-}
-
 func Test_depthStack_increment(t *testing.T) {
 	type fields struct {
 		stack [][2]int

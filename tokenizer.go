@@ -253,9 +253,9 @@ func (t *tokenizer) commitCurrentState() {
 	case tokenInteger, tokenDecimal:
 		t.appendToken(NewNumber(x))
 	case tokenLeftParen:
-		t.appendToken(LeftParen{})
+		t.appendToken(LeftParen)
 	case tokenRightParen:
-		t.appendToken(RightParen{})
+		t.appendToken(RightParen)
 	case tokenLeftUnaryOp:
 		switch x {
 		case "+":

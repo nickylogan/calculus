@@ -42,21 +42,21 @@ func Test_tokenizer_Tokenize(t *testing.T) {
 			name: "expr #3",
 			args: args{expr: "(10 +- 7.5) / ((-5)7)"},
 			wantTokens: []Token{
-				LeftParen{},
+				LeftParen,
 				NewNumber("10"),
 				NewOperator(Addition),
 				NewOperator(Minus),
 				NewNumber("7.5"),
-				RightParen{},
+				RightParen,
 				NewOperator(Division),
-				LeftParen{},
-				LeftParen{},
+				LeftParen,
+				LeftParen,
 				NewOperator(Minus),
 				NewNumber("5"),
-				RightParen{},
+				RightParen,
 				NewOperator(Multiplication),
 				NewNumber("7"),
-				RightParen{},
+				RightParen,
 			},
 		},
 		{
@@ -192,7 +192,7 @@ func Test_tokenizer_handleDigit(t *testing.T) {
 			wantState:      tokenInteger,
 			wantCurrSymbol: "5",
 			wantErr:        nil,
-			wantTokens:     []Token{RightParen{}, NewOperator(Multiplication)},
+			wantTokens:     []Token{RightParen, NewOperator(Multiplication)},
 		},
 		{
 			name:           "a * operator should be inserted between a right unary op and a digit",
@@ -219,7 +219,7 @@ func Test_tokenizer_handleDigit(t *testing.T) {
 			wantState:      tokenInteger,
 			wantCurrSymbol: "5",
 			wantErr:        nil,
-			wantTokens:     []Token{LeftParen{}},
+			wantTokens:     []Token{LeftParen},
 		},
 		{
 			name:           "a left unary operator should be committed before adding a digit",
@@ -320,7 +320,7 @@ func Test_tokenizer_handleDecimalPoint(t *testing.T) {
 			wantState:      tokenDecimalPoint,
 			wantCurrSymbol: ".",
 			wantErr:        nil,
-			wantTokens:     []Token{RightParen{}, NewOperator(Multiplication)},
+			wantTokens:     []Token{RightParen, NewOperator(Multiplication)},
 		},
 		{
 			name:           "a * operator should be inserted between a right unary op and a decimal point",
@@ -347,7 +347,7 @@ func Test_tokenizer_handleDecimalPoint(t *testing.T) {
 			wantState:      tokenDecimalPoint,
 			wantCurrSymbol: ".",
 			wantErr:        nil,
-			wantTokens:     []Token{LeftParen{}},
+			wantTokens:     []Token{LeftParen},
 		},
 		{
 			name:           "a left unary operator should be committed before adding a digit",
@@ -467,7 +467,7 @@ func Test_tokenizer_handleLeftParen(t *testing.T) {
 			wantState:          tokenLeftParen,
 			wantCurrSymbol:     "(",
 			wantCurrParenDepth: 1,
-			wantTokens:         []Token{LeftParen{}},
+			wantTokens:         []Token{LeftParen},
 			wantErr:            nil,
 		},
 		{
@@ -480,7 +480,7 @@ func Test_tokenizer_handleLeftParen(t *testing.T) {
 			wantState:          tokenLeftParen,
 			wantCurrSymbol:     "(",
 			wantCurrParenDepth: 1,
-			wantTokens:         []Token{RightParen{}, NewOperator(Multiplication)},
+			wantTokens:         []Token{RightParen, NewOperator(Multiplication)},
 			wantErr:            nil,
 		},
 		{
@@ -640,7 +640,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 		{
 			name: "a right paren must not be directly preceded by a left paren",
 			fields: fields{
-				tokens:     []Token{LeftParen{}},
+				tokens:     []Token{LeftParen},
 				currState:  tokenLeftParen,
 				currSymbol: "(",
 				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
@@ -649,7 +649,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 			wantState:          tokenLeftParen,
 			wantCurrSymbol:     "(",
 			wantCurrParenDepth: 1,
-			wantTokens:         []Token{LeftParen{}},
+			wantTokens:         []Token{LeftParen},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errEmptyParen, 0),
 				Token:    ")",
@@ -668,13 +668,13 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 			wantState:          tokenRightParen,
 			wantCurrSymbol:     ")",
 			wantCurrParenDepth: 0,
-			wantTokens:         []Token{RightParen{}},
+			wantTokens:         []Token{RightParen},
 			wantErr:            nil,
 		},
 		{
 			name: "a right paren must not succeed an unfinished binary operation",
 			fields: fields{
-				tokens:     []Token{LeftParen{}, NewNumber("1"), NewOperator(Multiplication)},
+				tokens:     []Token{LeftParen, NewNumber("1"), NewOperator(Multiplication)},
 				currState:  tokenBinaryOp,
 				currSymbol: "*",
 				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
@@ -683,7 +683,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 			wantState:          tokenBinaryOp,
 			wantCurrSymbol:     "*",
 			wantCurrParenDepth: 1,
-			wantTokens:         []Token{LeftParen{}, NewNumber("1"), NewOperator(Multiplication)},
+			wantTokens:         []Token{LeftParen, NewNumber("1"), NewOperator(Multiplication)},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errNoRightOperand, "*", -1),
 				Token:    "*",
@@ -693,7 +693,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 		{
 			name: "a right paren must not succeed an unfinished left unary operation",
 			fields: fields{
-				tokens:     []Token{LeftParen{}, NewOperator(Minus)},
+				tokens:     []Token{LeftParen, NewOperator(Minus)},
 				currState:  tokenLeftUnaryOp,
 				currSymbol: "-",
 				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
@@ -702,7 +702,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 			wantState:          tokenLeftUnaryOp,
 			wantCurrSymbol:     "-",
 			wantCurrParenDepth: 1,
-			wantTokens:         []Token{LeftParen{}, NewOperator(Minus)},
+			wantTokens:         []Token{LeftParen, NewOperator(Minus)},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errNoRightOperand, "-", -1),
 				Token:    "-",
@@ -983,7 +983,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			wantState:          tokenLeftUnaryOp,
 			wantCurrSymbol:     "-",
 			wantCurrParenDepth: 1,
-			wantTokens:         []Token{LeftParen{}},
+			wantTokens:         []Token{LeftParen},
 			wantErr:            nil,
 		},
 		{
@@ -1036,7 +1036,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			wantState:          tokenBinaryOp,
 			wantCurrSymbol:     "-",
 			wantCurrParenDepth: 0,
-			wantTokens:         []Token{RightParen{}},
+			wantTokens:         []Token{RightParen},
 			wantErr:            nil,
 		},
 		{
@@ -1051,7 +1051,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			wantState:          tokenBinaryOp,
 			wantCurrSymbol:     "*",
 			wantCurrParenDepth: 0,
-			wantTokens:         []Token{RightParen{}},
+			wantTokens:         []Token{RightParen},
 			wantErr:            nil,
 		},
 		{
@@ -1066,7 +1066,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			wantState:          tokenRightUnaryOp,
 			wantCurrSymbol:     "!",
 			wantCurrParenDepth: 0,
-			wantTokens:         []Token{RightParen{}},
+			wantTokens:         []Token{RightParen},
 			wantErr:            nil,
 		},
 		{
@@ -1279,7 +1279,7 @@ func Test_tokenizer_commitCurrentState(t *testing.T) {
 				currState:  tokenLeftParen,
 				currSymbol: "(",
 			},
-			wantTokens: []Token{LeftParen{}},
+			wantTokens: []Token{LeftParen},
 		},
 		{
 			name: "a right paren state should be committed as a right paren",
@@ -1287,7 +1287,7 @@ func Test_tokenizer_commitCurrentState(t *testing.T) {
 				currState:  tokenRightParen,
 				currSymbol: ")",
 			},
-			wantTokens: []Token{RightParen{}},
+			wantTokens: []Token{RightParen},
 		},
 		{
 			name: "a plus sign state should be committed as a plus operator",
