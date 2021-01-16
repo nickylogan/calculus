@@ -1,6 +1,7 @@
 package calculus
 
 const (
+	errNaN                 = "'%s' is not a number"
 	errUnknownSymbol       = "unknown symbol '%s' at index %d"
 	errMultipleDecimal     = "cannot allow multiple decimal points in a single number"
 	errLoneDecimal         = "something must be on either side of a '.' at index %d"

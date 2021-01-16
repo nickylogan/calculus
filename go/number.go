@@ -1,6 +1,10 @@
 package calculus
 
-import "strconv"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // Number represents a number
 type Number interface {
@@ -19,7 +23,16 @@ func (n number) String() string {
 
 // Value implements the Number interface
 func (n number) Value() (res float64, err error) {
-	return strconv.ParseFloat(n.symbol, 64)
+	res, err = strconv.ParseFloat(n.symbol, 64)
+	if err != nil {
+		switch {
+		case strings.Contains(err.Error(), strconv.ErrSyntax.Error()):
+			err = fmt.Errorf(errNaN, n.symbol)
+		case strings.Contains(err.Error(), strconv.ErrRange.Error()):
+			err = nil
+		}
+	}
+	return
 }
 
 // NewNumber creates a new number
