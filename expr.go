@@ -7,6 +7,8 @@ type Expression interface {
 	String() string
 }
 
+var _ Expression = (*expression)(nil)
+
 type expression struct {
 	expr string
 }

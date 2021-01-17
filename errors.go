@@ -12,6 +12,8 @@ const (
 	errNoLeftOperand       = "operator '%s' at index %d requires a left operand"
 )
 
+var _ error = (*SyntaxError)(nil)
+
 // SyntaxError stores a syntax error.
 type SyntaxError struct {
 	Message  string

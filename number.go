@@ -13,6 +13,8 @@ type Number interface {
 	Value() (res float64, err error)
 }
 
+var _ Number = (*number)(nil)
+
 type number struct {
 	symbol string
 }

@@ -25,6 +25,8 @@ const (
 	tokenRightUnaryOp
 )
 
+var _ Tokenizer = (*tokenizer)(nil)
+
 type tokenizer struct {
 	reg        TokenRegistry
 	expr       string

@@ -39,6 +39,8 @@ type Operator interface {
 	Arity() arity         // Arity returns the operator's arity.
 }
 
+var _ Operator = (*operator)(nil)
+
 type operator struct {
 	opType opType
 }
