@@ -33,7 +33,7 @@ type tokenizer struct {
 	currState  int
 	currSymbol *strings.Builder
 	currIndex  int
-	parenDepth *depthStack
+	parenDepth bracketStack
 }
 
 // NewTokenizer creates a new Tokenizer
@@ -165,13 +165,14 @@ func (t *tokenizer) handleLeftParen(r rune) (err error) {
 
 	t.currSymbol.WriteRune(r)
 	t.currState = tokenLeftParen
-	t.parenDepth.increment(t.currIndex)
+	// TODO: in the future, it may not be only left paren
+	t.parenDepth.increment(t.currIndex, LeftParen)
 	return
 }
 
 func (t *tokenizer) handleRightParen(r rune) (err error) {
 	// can't allow unmatched parentheses
-	if t.parenDepth.current() == 0 {
+	if t.parenDepth.depth() == 0 {
 		return SyntaxError{
 			Message:  fmt.Sprintf(errUnmatchedRightParen, t.currIndex),
 			Token:    ")",
@@ -207,7 +208,8 @@ func (t *tokenizer) handleRightParen(r rune) (err error) {
 
 	t.currSymbol.WriteRune(r)
 	t.currState = tokenRightParen
-	t.parenDepth.decrement(t.currIndex)
+	// TODO: in the future, it may not be only right paren
+	t.parenDepth.decrement(t.currIndex, RightParen)
 	return
 }
 
@@ -305,14 +307,14 @@ func (t *tokenizer) validateFinalState() (err error) {
 	}
 
 	// check paren depth
-	if t.parenDepth.current() > 0 {
+	if t.parenDepth.depth() > 0 {
 		n := len(t.parenDepth.stack)
-		curr := t.parenDepth.current()
+		curr := t.parenDepth.depth()
 
 		var idx int
 		for i := n - 1; i >= 0; i-- {
-			if t.parenDepth.stack[i][1] == curr {
-				idx = t.parenDepth.stack[i][0]
+			if t.parenDepth.stack[i].depth == curr {
+				idx = t.parenDepth.stack[i].index
 				break
 			}
 		}
@@ -342,6 +344,6 @@ func (t *tokenizer) initialize(expr string) {
 func (t *tokenizer) reset() {
 	t.currState = tokenNothing
 	t.currIndex = 0
-	t.parenDepth = new(depthStack)
+	t.parenDepth = bracketStack{}
 	t.currSymbol.Reset()
 }

@@ -534,7 +534,6 @@ func Test_tokenizer_handleLeftParen(t *testing.T) {
 				tokens:     tt.fields.tokens,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
-				parenDepth: new(depthStack),
 			}
 
 			err := tr.handleLeftParen(tt.args.r)
@@ -547,7 +546,7 @@ func Test_tokenizer_handleLeftParen(t *testing.T) {
 			assert.Equal(t, tt.wantState, tr.currState)
 			assert.Equal(t, tt.wantCurrSymbol, tr.currSymbol.String())
 			assert.Equal(t, tt.wantTokens, tr.tokens)
-			assert.Equal(t, tt.wantCurrParenDepth, tr.parenDepth.current())
+			assert.Equal(t, tt.wantCurrParenDepth, tr.parenDepth.depth())
 		})
 	}
 }
@@ -557,7 +556,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 		tokens     []Token
 		currState  int
 		currSymbol string
-		parenDepth *depthStack
+		parenDepth bracketStack
 	}
 	type args struct {
 		r rune
@@ -578,7 +577,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenInteger,
 				currSymbol: "1",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenRightParen,
@@ -593,7 +592,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimal,
 				currSymbol: "1.5",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenRightParen,
@@ -608,7 +607,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenInteger,
 				currSymbol: "1",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenInteger,
@@ -627,7 +626,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimalPoint,
 				currSymbol: ".",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenDecimalPoint,
@@ -646,7 +645,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     []Token{LeftParen},
 				currState:  tokenLeftParen,
 				currSymbol: "(",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenLeftParen,
@@ -665,7 +664,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightParen,
 				currSymbol: ")",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenRightParen,
@@ -680,7 +679,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     []Token{LeftParen, NewNumber("1"), NewOperator(Multiplication)},
 				currState:  tokenBinaryOp,
 				currSymbol: "*",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenBinaryOp,
@@ -699,7 +698,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     []Token{LeftParen, NewOperator(Minus)},
 				currState:  tokenLeftUnaryOp,
 				currSymbol: "-",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenLeftUnaryOp,
@@ -718,7 +717,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightUnaryOp,
 				currSymbol: "!",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: ')'},
 			wantState:          tokenRightParen,
@@ -750,7 +749,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 			assert.Equal(t, tt.wantState, tr.currState)
 			assert.Equal(t, tt.wantCurrSymbol, tr.currSymbol.String())
 			assert.Equal(t, tt.wantTokens, tr.tokens)
-			assert.Equal(t, tt.wantCurrParenDepth, tr.parenDepth.current())
+			assert.Equal(t, tt.wantCurrParenDepth, tr.parenDepth.depth())
 		})
 	}
 }
@@ -760,7 +759,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 		tokens     []Token
 		currState  int
 		currSymbol string
-		parenDepth *depthStack
+		parenDepth bracketStack
 	}
 	type args struct {
 		r rune
@@ -781,7 +780,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenNothing,
 				currSymbol: "",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenLeftUnaryOp,
@@ -796,7 +795,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenNothing,
 				currSymbol: "",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenNothing,
@@ -815,7 +814,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenNothing,
 				currSymbol: "",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenNothing,
@@ -834,7 +833,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenInteger,
 				currSymbol: "1",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenBinaryOp,
@@ -849,7 +848,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenInteger,
 				currSymbol: "1",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenBinaryOp,
@@ -864,7 +863,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenInteger,
 				currSymbol: "1",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenRightUnaryOp,
@@ -879,7 +878,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimalPoint,
 				currSymbol: ".",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenDecimalPoint,
@@ -898,7 +897,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimalPoint,
 				currSymbol: ".",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenDecimalPoint,
@@ -917,7 +916,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimalPoint,
 				currSymbol: ".",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenDecimalPoint,
@@ -936,7 +935,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimal,
 				currSymbol: "1.5",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenBinaryOp,
@@ -951,7 +950,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimal,
 				currSymbol: "1.5",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenBinaryOp,
@@ -966,7 +965,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenDecimal,
 				currSymbol: "1.5",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenRightUnaryOp,
@@ -981,7 +980,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenLeftParen,
 				currSymbol: "(",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenLeftUnaryOp,
@@ -996,7 +995,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenLeftParen,
 				currSymbol: "(",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenLeftParen,
@@ -1015,7 +1014,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenLeftParen,
 				currSymbol: "(",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenLeftParen,
@@ -1034,7 +1033,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightParen,
 				currSymbol: ")",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenBinaryOp,
@@ -1049,7 +1048,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightParen,
 				currSymbol: ")",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenBinaryOp,
@@ -1064,7 +1063,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightParen,
 				currSymbol: ")",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenRightUnaryOp,
@@ -1079,7 +1078,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenBinaryOp,
 				currSymbol: "*",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '-'},
 			wantState:          tokenLeftUnaryOp,
@@ -1094,7 +1093,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenBinaryOp,
 				currSymbol: "*",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '/'},
 			wantState:          tokenBinaryOp,
@@ -1113,7 +1112,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenBinaryOp,
 				currSymbol: "*",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenBinaryOp,
@@ -1132,7 +1131,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenLeftUnaryOp,
 				currSymbol: "-",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '+'},
 			wantState:          tokenLeftUnaryOp,
@@ -1147,7 +1146,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenLeftUnaryOp,
 				currSymbol: "-",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenLeftUnaryOp,
@@ -1166,7 +1165,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenLeftUnaryOp,
 				currSymbol: "-",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenLeftUnaryOp,
@@ -1185,7 +1184,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightUnaryOp,
 				currSymbol: "!",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '+'},
 			wantState:          tokenBinaryOp,
@@ -1200,7 +1199,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightUnaryOp,
 				currSymbol: "!",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '*'},
 			wantState:          tokenBinaryOp,
@@ -1215,7 +1214,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 				tokens:     nil,
 				currState:  tokenRightUnaryOp,
 				currSymbol: "!",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			args:               args{r: '!'},
 			wantState:          tokenRightUnaryOp,
@@ -1247,7 +1246,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			assert.Equal(t, tt.wantState, tr.currState)
 			assert.Equal(t, tt.wantCurrSymbol, tr.currSymbol.String())
 			assert.Equal(t, tt.wantTokens, tr.tokens)
-			assert.Equal(t, tt.wantCurrParenDepth, tr.parenDepth.current())
+			assert.Equal(t, tt.wantCurrParenDepth, tr.parenDepth.depth())
 		})
 	}
 }
@@ -1374,7 +1373,7 @@ func Test_tokenizer_validateFinalState(t *testing.T) {
 	type fields struct {
 		currState  int
 		currSymbol string
-		parenDepth *depthStack
+		parenDepth bracketStack
 	}
 	tests := []struct {
 		name    string
@@ -1386,7 +1385,7 @@ func Test_tokenizer_validateFinalState(t *testing.T) {
 			fields: fields{
 				currState:  tokenDecimalPoint,
 				currSymbol: ".",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errLoneDecimal, -1),
@@ -1399,7 +1398,7 @@ func Test_tokenizer_validateFinalState(t *testing.T) {
 			fields: fields{
 				currState:  tokenLeftUnaryOp,
 				currSymbol: "-",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errNoRightOperand, "-", 0),
@@ -1412,7 +1411,7 @@ func Test_tokenizer_validateFinalState(t *testing.T) {
 			fields: fields{
 				currState:  tokenBinaryOp,
 				currSymbol: "*",
-				parenDepth: &depthStack{stack: nil},
+				parenDepth: bracketStack{stack: nil},
 			},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errNoRightOperand, "*", 0),
@@ -1425,7 +1424,7 @@ func Test_tokenizer_validateFinalState(t *testing.T) {
 			fields: fields{
 				currState:  tokenLeftParen,
 				currSymbol: "(",
-				parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+				parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 			},
 			wantErr: &SyntaxError{
 				Message:  fmt.Sprintf(errUnmatchedLeftParen, 0),
@@ -1463,13 +1462,13 @@ func Test_tokenizer_reset(t *testing.T) {
 	tt := &tokenizer{
 		currState:  tokenRightParen,
 		currIndex:  10,
-		parenDepth: &depthStack{stack: [][2]int{{0, 1}}},
+		parenDepth: bracketStack{stack: []bracketDepth{{0, 1, LeftParen}}},
 		currSymbol: sb,
 	}
 	tt.reset()
 
 	assert.Equal(t, tokenNothing, tt.currState)
 	assert.Equal(t, 0, tt.currIndex)
-	assert.Equal(t, 0, tt.parenDepth.current())
+	assert.Equal(t, 0, tt.parenDepth.depth())
 	assert.Equal(t, 0, tt.currSymbol.Len())
 }

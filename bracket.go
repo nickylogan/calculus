@@ -50,25 +50,39 @@ func (b bracket) IsRight() bool {
 	}
 }
 
-type depthStack struct {
-	stack [][2]int // stores pairs of index and depth
+type bracketDepth struct {
+	index int
+	depth int
+	b     Bracket
 }
 
-func (d *depthStack) increment(idx int) {
-	d.stack = append(d.stack, [2]int{idx, d.current() + 1})
+type bracketStack struct {
+	stack []bracketDepth
 }
 
-func (d *depthStack) decrement(idx int) {
-	d.stack = append(d.stack, [2]int{idx, d.current() - 1})
+func (s *bracketStack) increment(idx int, b Bracket) {
+	s.stack = append(s.stack, bracketDepth{
+		index: idx,
+		depth: s.depth() + 1,
+		b:     b,
+	})
 }
 
-func (d *depthStack) current() int {
-	if len(d.stack) == 0 {
+func (s *bracketStack) decrement(idx int, b Bracket) {
+	s.stack = append(s.stack, bracketDepth{
+		index: idx,
+		depth: s.depth() - 1,
+		b:     b,
+	})
+}
+
+func (s bracketStack) depth() int {
+	if len(s.stack) == 0 {
 		return 0
 	}
-	return d.stack[len(d.stack)-1][1]
+	return s.stack[len(s.stack)-1].depth
 }
 
-func (d *depthStack) clear() {
-	d.stack = nil
+func (s *bracketStack) clear() {
+	s.stack = nil
 }

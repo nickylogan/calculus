@@ -8,7 +8,7 @@ import (
 
 func Test_depthStack_increment(t *testing.T) {
 	type fields struct {
-		stack [][2]int
+		stack []bracketDepth
 	}
 	type args struct {
 		idx int
@@ -17,17 +17,27 @@ func Test_depthStack_increment(t *testing.T) {
 		name      string
 		fields    fields
 		args      args
-		wantStack [][2]int
+		wantStack []bracketDepth
 	}{
-		{"an empty stack should be appended with {idx, 1}", fields{nil}, args{0}, [][2]int{{0, 1}}},
-		{"a filled stack should be appended with {idx, top+1}", fields{[][2]int{{0, 1}}}, args{3}, [][2]int{{0, 1}, {3, 2}}},
+		{
+			name:      "an empty stack should be appended with {idx, 1}",
+			fields:    fields{nil},
+			args:      args{0},
+			wantStack: []bracketDepth{{0, 1, LeftParen}},
+		},
+		{
+			name:      "a filled stack should be appended with {idx, top+1}",
+			fields:    fields{[]bracketDepth{{0, 1, LeftParen}}},
+			args:      args{3},
+			wantStack: []bracketDepth{{0, 1, LeftParen}, {3, 2, LeftParen}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &depthStack{
+			d := &bracketStack{
 				stack: tt.fields.stack,
 			}
-			d.increment(tt.args.idx)
+			d.increment(tt.args.idx, LeftParen)
 			assert.Equal(t, tt.wantStack, d.stack)
 		})
 	}
@@ -35,7 +45,7 @@ func Test_depthStack_increment(t *testing.T) {
 
 func Test_depthStack_decrement(t *testing.T) {
 	type fields struct {
-		stack [][2]int
+		stack []bracketDepth
 	}
 	type args struct {
 		idx int
@@ -44,58 +54,78 @@ func Test_depthStack_decrement(t *testing.T) {
 		name      string
 		fields    fields
 		args      args
-		wantStack [][2]int
+		wantStack []bracketDepth
 	}{
-		{"an empty stack should be appended with {idx, -1}", fields{nil}, args{0}, [][2]int{{0, -1}}},
-		{"a filled stack should be appended with {idx, top-1}", fields{[][2]int{{0, 1}}}, args{3}, [][2]int{{0, 1}, {3, 0}}},
+		{
+			name:      "an empty stack should be appended with {idx, -1}",
+			fields:    fields{nil},
+			args:      args{0},
+			wantStack: []bracketDepth{{0, -1, RightParen}},
+		},
+		{
+			name:      "a filled stack should be appended with {idx, top-1}",
+			fields:    fields{[]bracketDepth{{0, 1, LeftParen}}},
+			args:      args{3},
+			wantStack: []bracketDepth{{0, 1, LeftParen}, {3, 0, RightParen}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &depthStack{
+			d := &bracketStack{
 				stack: tt.fields.stack,
 			}
-			d.decrement(tt.args.idx)
+			d.decrement(tt.args.idx, RightParen)
 			assert.Equal(t, tt.wantStack, d.stack)
 		})
 	}
 }
 
-func Test_depthStack_current(t *testing.T) {
+func Test_depthStack_depth(t *testing.T) {
 	type fields struct {
-		stack [][2]int
+		stack []bracketDepth
 	}
 	tests := []struct {
 		name   string
 		fields fields
 		want   int
 	}{
-		{"an empty stack's current value is 0", fields{nil}, 0},
-		{"a filled stack's current value is the topmost value'", fields{[][2]int{{0, 1}}}, 1},
+		{
+			name:   "an empty stack's depth value is 0",
+			fields: fields{nil},
+		},
+		{
+			name:   "a filled stack's depth value is the topmost value'",
+			fields: fields{[]bracketDepth{{0, 1, LeftParen}}},
+			want:   1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &depthStack{
+			d := &bracketStack{
 				stack: tt.fields.stack,
 			}
-			assert.Equal(t, tt.want, d.current())
+			assert.Equal(t, tt.want, d.depth())
 		})
 	}
 }
 
 func Test_depthStack_clear(t *testing.T) {
 	type fields struct {
-		stack [][2]int
+		stack []bracketDepth
 	}
 	tests := []struct {
 		name      string
 		fields    fields
-		wantStack [][2]int
+		wantStack []bracketDepth
 	}{
-		{"it should clear the internal stack", fields{[][2]int{{0, 1}, {1, 2}}}, nil},
+		{
+			name:   "it should clear the internal stack",
+			fields: fields{[]bracketDepth{{0, 1, LeftParen}, {1, 2, LeftParen}}},
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			d := &depthStack{
+			d := &bracketStack{
 				stack: tt.fields.stack,
 			}
 			d.clear()
