@@ -799,7 +799,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			},
 			args:               args{r: '*'},
 			wantState:          tokenNothing,
-			wantCurrSymbol:     "*",
+			wantCurrSymbol:     "",
 			wantCurrParenDepth: 0,
 			wantTokens:         nil,
 			wantErr: &SyntaxError{
@@ -818,11 +818,11 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			},
 			args:               args{r: '!'},
 			wantState:          tokenNothing,
-			wantCurrSymbol:     "*",
+			wantCurrSymbol:     "",
 			wantCurrParenDepth: 0,
 			wantTokens:         nil,
 			wantErr: &SyntaxError{
-				Message:  fmt.Sprintf(errNoLeftOperand, "*", 0),
+				Message:  fmt.Sprintf(errNoLeftOperand, "!", 0),
 				Token:    "*",
 				Position: 0,
 			},
