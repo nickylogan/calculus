@@ -26,6 +26,7 @@ const (
 )
 
 type tokenizer struct {
+	reg        TokenRegistry
 	expr       string
 	sc         *bufio.Scanner
 	tokens     []Token
@@ -38,6 +39,8 @@ type tokenizer struct {
 // NewTokenizer creates a new Tokenizer
 func NewTokenizer() Tokenizer {
 	return &tokenizer{
+		// TODO: add registry validation
+		reg:        defaultTokenRegistry,
 		currSymbol: new(strings.Builder),
 	}
 }
@@ -52,27 +55,27 @@ func (t *tokenizer) Tokenize(expr string) (tokens []Token, err error) {
 
 		r := []rune(t.sc.Text())[0]
 		switch {
-		case IsDigit(r):
+		case t.reg.IsDigit(r):
 			if err = t.handleDigit(r); err != nil {
 				return
 			}
-		case IsDecimalPoint(r):
+		case t.reg.IsDecimalPoint(r):
 			if err = t.handleDecimalPoint(r); err != nil {
 				return
 			}
-		case IsLeftParen(r):
+		case t.reg.IsLeftBracket(r):
 			if err = t.handleLeftParen(r); err != nil {
 				return
 			}
-		case IsRightParen(r):
+		case t.reg.IsRightBracket(r):
 			if err = t.handleRightParen(r); err != nil {
 				return
 			}
-		case IsOperator(r):
+		case t.reg.IsOperator(r):
 			if err = t.handleOperator(r); err != nil {
 				return
 			}
-		case IsWhitespace(r):
+		case t.reg.IsWhitespace(r):
 			// ignore whitespace
 		default:
 			err = SyntaxError{
@@ -218,13 +221,24 @@ func (t *tokenizer) handleOperator(r rune) (err error) {
 		}
 	}
 
-	// handle sign
-	// TODO: this rule only applies for sign operators.
-	if isUnaryCandidate(r) && t.currState&(tokenNothing|tokenLeftParen|tokenBinaryOp|tokenLeftUnaryOp) != 0 {
+	// handle left unary operators
+	_, lunOk := t.reg.operators.GetOperator(r, IsUnaryOp, IsRightAssocOp)
+	if lunOk && t.currState&(tokenNothing|tokenLeftParen|tokenBinaryOp|tokenLeftUnaryOp) != 0 {
 		t.commitCurrentState()
 		t.currState = tokenLeftUnaryOp
 		t.currSymbol.WriteRune(r)
 		return
+	}
+
+	// operator is left unary ONLY, but has no right operands.
+	_, binOk := t.reg.operators.GetOperator(r, IsBinaryOp)
+	_, runOk := t.reg.operators.GetOperator(r, IsUnaryOp, IsLeftAssocOp)
+	if !(binOk || runOk) {
+		return SyntaxError{
+			Message:  fmt.Sprintf(errNoRightOperand, string(r), t.currIndex),
+			Token:    string(r),
+			Position: t.currIndex,
+		}
 	}
 
 	// at this point, operators should require a left operand.
@@ -238,7 +252,7 @@ func (t *tokenizer) handleOperator(r rune) (err error) {
 
 	t.commitCurrentState()
 	t.currSymbol.WriteRune(r)
-	if r == '!' {
+	if runOk {
 		t.currState = tokenRightUnaryOp
 	} else {
 		t.currState = tokenBinaryOp
@@ -257,25 +271,17 @@ func (t *tokenizer) commitCurrentState() {
 	case tokenRightParen:
 		t.appendToken(RightParen)
 	case tokenLeftUnaryOp:
-		switch x {
-		case "+":
-			t.appendToken(NewOperator(Plus))
-		case "-":
-			t.appendToken(NewOperator(Minus))
-		}
-	case tokenBinaryOp, tokenRightUnaryOp:
-		switch x {
-		case "+":
-			t.appendToken(NewOperator(Addition))
-		case "-":
-			t.appendToken(NewOperator(Subtraction))
-		case "*":
-			t.appendToken(NewOperator(Multiplication))
-		case "/":
-			t.appendToken(NewOperator(Division))
-		case "!":
-			t.appendToken(NewOperator(Factorial))
-		}
+		r := []rune(x)[0]
+		op, _ := t.reg.operators.GetOperator(r, IsRightAssocOp, IsUnaryOp)
+		t.appendToken(op)
+	case tokenBinaryOp:
+		r := []rune(x)[0]
+		op, _ := t.reg.operators.GetOperator(r, IsBinaryOp)
+		t.appendToken(op)
+	case tokenRightUnaryOp:
+		r := []rune(x)[0]
+		op, _ := t.reg.operators.GetOperator(r, IsLeftAssocOp, IsUnaryOp)
+		t.appendToken(op)
 	}
 	t.currSymbol.Reset()
 }

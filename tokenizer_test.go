@@ -236,6 +236,7 @@ func Test_tokenizer_handleDigit(t *testing.T) {
 			sb := new(strings.Builder)
 			sb.WriteString(tt.fields.currSymbol)
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				tokens:     tt.fields.tokens,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
@@ -364,6 +365,7 @@ func Test_tokenizer_handleDecimalPoint(t *testing.T) {
 			sb := new(strings.Builder)
 			sb.WriteString(tt.fields.currSymbol)
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				tokens:     tt.fields.tokens,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
@@ -528,6 +530,7 @@ func Test_tokenizer_handleLeftParen(t *testing.T) {
 			sb := new(strings.Builder)
 			sb.WriteString(tt.fields.currSymbol)
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				tokens:     tt.fields.tokens,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
@@ -731,6 +734,7 @@ func Test_tokenizer_handleRightParen(t *testing.T) {
 			sb.WriteString(tt.fields.currSymbol)
 
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				tokens:     tt.fields.tokens,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
@@ -1187,7 +1191,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			wantState:          tokenBinaryOp,
 			wantCurrSymbol:     "+",
 			wantCurrParenDepth: 0,
-			wantTokens:         []Token{NewOperator(Minus)},
+			wantTokens:         []Token{NewOperator(Factorial)},
 			wantErr:            nil,
 		},
 		{
@@ -1227,6 +1231,7 @@ func Test_tokenizer_handleOperator(t *testing.T) {
 			sb.WriteString(tt.fields.currSymbol)
 
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				tokens:     tt.fields.tokens,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
@@ -1352,6 +1357,7 @@ func Test_tokenizer_commitCurrentState(t *testing.T) {
 			sb.WriteString(tt.fields.currSymbol)
 
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
 			}
@@ -1434,6 +1440,7 @@ func Test_tokenizer_validateFinalState(t *testing.T) {
 			sb.WriteString(tt.fields.currSymbol)
 
 			tr := &tokenizer{
+				reg:        defaultTokenRegistry,
 				currState:  tt.fields.currState,
 				currSymbol: sb,
 				parenDepth: tt.fields.parenDepth,

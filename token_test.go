@@ -66,7 +66,7 @@ func TestIsLeftParen(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, IsLeftParen(tt.args.r))
+			assert.Equal(t, tt.want, IsLeftBracket(tt.args.r))
 		})
 	}
 }
@@ -85,7 +85,7 @@ func TestIsRightParen(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			assert.Equal(t, tt.want, IsRightParen(tt.args.r))
+			assert.Equal(t, tt.want, IsRightBracket(tt.args.r))
 		})
 	}
 }

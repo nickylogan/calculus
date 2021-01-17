@@ -110,7 +110,26 @@ func (o operator) Arity() arity {
 	return Binary
 }
 
-// TODO: remove
-func isUnaryCandidate(r rune) bool {
-	return r == '-' || r == '+'
+// IsUnaryOp is a utility function that checks whether an operator
+// is unary.
+func IsUnaryOp(op Operator) bool {
+	return op.Arity() == Unary
+}
+
+// IsBinaryOp is a utility function that checks whether an operator
+// is binary.
+func IsBinaryOp(op Operator) bool {
+	return op.Arity() == Binary
+}
+
+// IsLeftAssocOp is a utility function that checks whether an operator
+// is left associative.
+func IsLeftAssocOp(op Operator) bool {
+	return op.Associativity() == LeftAssoc
+}
+
+// IsRightAssocOp is a utility function that checks whether an operator
+// is right associative.
+func IsRightAssocOp(op Operator) bool {
+	return op.Associativity() == RightAssoc
 }
