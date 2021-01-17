@@ -244,7 +244,7 @@ func (t *tokenizer) handleOperator(r rune) (err error) {
 	}
 
 	// at this point, operators should require a left operand.
-	if t.currState&(tokenLeftParen|tokenLeftUnaryOp|tokenBinaryOp) != 0 {
+	if t.currState&(tokenNothing|tokenLeftParen|tokenLeftUnaryOp|tokenBinaryOp) != 0 {
 		return SyntaxError{
 			Message:  fmt.Sprintf(errNoLeftOperand, string(r), t.currIndex),
 			Token:    string(r),
