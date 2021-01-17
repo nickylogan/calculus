@@ -1,4 +1,4 @@
-package calculus
+package yamp
 
 // Bracket represents bracket tokens such as parentheses.
 type Bracket interface {

@@ -1,4 +1,4 @@
-package calculus
+package yamp
 
 type opType int
 

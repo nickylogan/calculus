@@ -1,4 +1,4 @@
-package calculus
+package yamp
 
 const (
 	errNaN                 = "'%s' is not a number"

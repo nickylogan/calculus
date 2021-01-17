@@ -1,4 +1,4 @@
-package calculus
+package yamp
 
 // Expression represents a mathematical expression
 type Expression interface {
